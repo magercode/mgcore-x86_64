@@ -100,6 +100,20 @@ Mode input:
 - `gui` memakai jendela QEMU dengan input keyboard PS/2 untuk CLI
 - `stdio` tetap memakai serial `-serial stdio`
 
+## Perintah Shell Tambahan
+
+- `mgctl status` : status ringkas sistem koneksi
+- `mgctl net tools` : daftar driver koneksi asli yang jadi target integrasi (`e1000/e1000e`, `rtl8139`, `virtio-net`, `ne2k-pci`)
+- `mgctl net adapters` : daftar ethernet controller hasil deteksi PCI
+- `mgctl net scan` / `mgctl net nearby` : scan gateway ARP + tampilkan status stack jaringan nyata
+- `mgctl net connect <net0|default|up>` : bring-up koneksi `net0` (resolve gateway)
+- `mgctl power safe status|reboot|shutdown` : policy safe boot saat panic/memory leak
+- `nearby` : shortcut scan + list koneksi terdekat
+- `connect <net0|default|up>` : shortcut bring-up koneksi `net0`
+- `ping <ipv4> [count]` : ICMP ping nyata (contoh `ping 8.8.8.8 4`)
+- `shutdown` : halt mesin
+- `reboot` : reboot mesin
+
 ## Status implementasi
 
 Yang sudah masuk ke repo:

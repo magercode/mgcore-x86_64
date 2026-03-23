@@ -37,6 +37,8 @@ task *task_create_kernel(const char *name);
 task *task_spawn_user(const char *name);
 task *task_find(pid_t pid);
 pid_t task_current_pid(void);
+int task_kill(pid_t pid, int status);
+pid_t task_find_likely_memory_leaker(void);
 void task_exit(int status);
 void task_sleep_until(uint64_t tick);
 void task_dump(void);

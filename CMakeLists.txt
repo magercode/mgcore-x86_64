@@ -143,11 +143,14 @@ set(KERNEL_SOURCES
   src/kernel/vmm.c
   src/kernel/task.c
   src/kernel/scheduler.c
+  src/kernel/swap.c
+  src/kernel/safeboot.c
   src/kernel/syscall.c
   src/kernel/syscall_arch.c
   src/kernel/fs.c
   src/kernel/tmpfs.c
   src/kernel/elf.c
+  src/kernel/net.c
   src/kernel/signal.c
   src/kernel/string.c
   src/kernel/util.c
@@ -219,7 +222,7 @@ if(MGCORE_ENABLE_USERSPACE)
     COMMAND ${CMAKE_COMMAND} -E make_directory ${MGCORE_ROOTFS_DIR}/etc
     COMMAND ${CMAKE_COMMAND} -E make_directory ${MGCORE_ROOTFS_DIR}/scripts
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/userspace/test_programs/hello.py ${MGCORE_ROOTFS_DIR}/scripts/hello.py
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/docs/syscalls.md ${MGCORE_ROOTFS_DIR}/etc/syscalls.txt
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/docs/syscall-notes.md ${MGCORE_ROOTFS_DIR}/etc/syscalls.txt
     DEPENDS init shell hello_c
   )
 

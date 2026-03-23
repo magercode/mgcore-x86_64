@@ -1,6 +1,7 @@
 #include "mgcore/keyboard.h"
 
 #include "mgcore/console.h"
+#include "mgcore/input.h"
 #include "mgcore/io.h"
 
 #include <stddef.h>
@@ -13,8 +14,15 @@
 #define PS2_SCANCODE_EXTENDED 0xE0
 #define SCANCODE_LEFT_SHIFT 0x2A
 #define SCANCODE_RIGHT_SHIFT 0x36
+#define SCANCODE_CTRL 0x1D
+#define SCANCODE_ESC 0x01
+#define SCANCODE_ARROW_UP 0x48
+#define SCANCODE_ARROW_DOWN 0x50
+#define SCANCODE_ARROW_LEFT 0x4B
+#define SCANCODE_ARROW_RIGHT 0x4D
 
 static int g_shift_active;
+static int g_ctrl_active;
 static int g_extended_sequence;
 
 struct keymap_entry {
@@ -90,8 +98,41 @@ static char translate_scancode(uint8_t scancode) {
   return g_shift_active ? entry.shifted : entry.normal;
 }
 
+static char translate_extended_scancode(uint8_t scancode) {
+  switch (scancode) {
+    case SCANCODE_ARROW_UP:
+      return (char)INPUT_KEY_CTRL_P;
+    case SCANCODE_ARROW_DOWN:
+      return (char)INPUT_KEY_CTRL_N;
+    case SCANCODE_ARROW_LEFT:
+      return (char)INPUT_KEY_CTRL_B;
+    case SCANCODE_ARROW_RIGHT:
+      return (char)INPUT_KEY_CTRL_F;
+    default:
+      return '\0';
+  }
+}
+
+static char apply_ctrl_translation(char translated) {
+  if (!g_ctrl_active) {
+    return translated;
+  }
+
+  if (translated >= 'a' && translated <= 'z') {
+    return (char)(translated - 'a' + 1);
+  }
+  if (translated >= 'A' && translated <= 'Z') {
+    return (char)(translated - 'A' + 1);
+  }
+  if (translated == '[') {
+    return (char)INPUT_KEY_ESC;
+  }
+  return translated;
+}
+
 void keyboard_init(void) {
   g_shift_active = 0;
+  g_ctrl_active = 0;
   g_extended_sequence = 0;
   while ((io_in8(PS2_STATUS_PORT) & PS2_STATUS_OUTPUT_FULL) != 0) {
     (void)io_in8(PS2_DATA_PORT);
@@ -113,15 +154,15 @@ void keyboard_handle_irq(void) {
     return;
   }
 
-  if (g_extended_sequence) {
-    g_extended_sequence = 0;
-    return;
-  }
-
   if ((scancode & (uint8_t)PS2_SCANCODE_RELEASE) != 0) {
     scancode &= (uint8_t)~PS2_SCANCODE_RELEASE;
     if (scancode == SCANCODE_LEFT_SHIFT || scancode == SCANCODE_RIGHT_SHIFT) {
       g_shift_active = 0;
+    } else if (scancode == SCANCODE_CTRL) {
+      g_ctrl_active = 0;
+    }
+    if (g_extended_sequence) {
+      g_extended_sequence = 0;
     }
     return;
   }
@@ -130,8 +171,24 @@ void keyboard_handle_irq(void) {
     g_shift_active = 1;
     return;
   }
+  if (scancode == SCANCODE_CTRL) {
+    g_ctrl_active = 1;
+    if (g_extended_sequence) {
+      g_extended_sequence = 0;
+    }
+    return;
+  }
 
-  translated = translate_scancode(scancode);
+  if (g_extended_sequence) {
+    translated = translate_extended_scancode(scancode);
+    g_extended_sequence = 0;
+  } else if (scancode == SCANCODE_ESC) {
+    translated = (char)INPUT_KEY_ESC;
+  } else {
+    translated = translate_scancode(scancode);
+    translated = apply_ctrl_translation(translated);
+  }
+
   if (translated != '\0') {
     console_enqueue_input(translated);
   }

@@ -15,5 +15,7 @@ void *kmemset(void *dst, int value, size_t size);
 int kmemcmp(const void *lhs, const void *rhs, size_t size);
 int kvsnprintf(char *buffer, size_t size, const char *fmt, va_list args);
 int ksnprintf(char *buffer, size_t size, const char *fmt, ...);
+int kvformat_braces(char *buffer, size_t size, const char *pattern, va_list args);
+int kformat_braces(char *buffer, size_t size, const char *pattern, ...);
 
 #endif

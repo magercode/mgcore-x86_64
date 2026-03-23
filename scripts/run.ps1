@@ -21,6 +21,8 @@ if ($Mode -eq "gui") {
   & $qemu.Source `
     -m 256M `
     -display sdl `
+    -netdev user,id=n0 `
+    -device rtl8139,netdev=n0 `
     -serial "file:$serialLog" `
     -cdrom $iso `
     -no-reboot `
@@ -30,6 +32,8 @@ if ($Mode -eq "gui") {
 
 & qemu-system-x86_64.exe `
   -m 256M `
+  -netdev user,id=n0 `
+  -device rtl8139,netdev=n0 `
   -serial stdio `
   -cdrom $iso `
   -no-reboot `

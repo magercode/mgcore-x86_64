@@ -3,6 +3,8 @@
 #include "mgcore/io.h"
 #include "mgcore/keyboard.h"
 #include "mgcore/kernel.h"
+#include "mgcore/mouse.h"
+#include "mgcore/net.h"
 #include "mgcore/sched.h"
 
 #include <stddef.h>
@@ -56,8 +58,9 @@ static void pic_remap(void) {
   io_wait();
   io_out8(0xA1, 0x01);
   io_wait();
-  io_out8(0x21, 0xFC);
-  io_out8(0xA1, 0xFF);
+  /* Unmask IRQ0(timer), IRQ1(keyboard), IRQ2(cascade) on master and IRQ11/IRQ12 on slave. */
+  io_out8(0x21, 0xF8);
+  io_out8(0xA1, 0xE7);
 }
 
 static void pit_program(uint32_t hz) {
@@ -78,7 +81,7 @@ void interrupt_init(void) {
   struct idt_pointer idtr;
   size_t i;
 
-  for (i = 0; i < 34; ++i) {
+  for (i = 0; i < 45; ++i) {
     idt_set_gate((uint8_t)i, isr_stub_table[i], 0x8E);
   }
 
@@ -108,6 +111,18 @@ void interrupt_dispatch(struct interrupt_frame *frame) {
 
   if (frame->vector == 33) {
     keyboard_handle_irq();
+    pic_send_eoi((uint8_t)frame->vector);
+    return;
+  }
+
+  if (frame->vector == 43) {
+    net_handle_irq();
+    pic_send_eoi((uint8_t)frame->vector);
+    return;
+  }
+
+  if (frame->vector == 44) {
+    mouse_handle_irq();
     pic_send_eoi((uint8_t)frame->vector);
     return;
   }

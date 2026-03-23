@@ -52,6 +52,17 @@ ISR_ERR   30
 ISR_NOERR 31
 ISR_NOERR 32
 ISR_NOERR 33
+ISR_NOERR 34
+ISR_NOERR 35
+ISR_NOERR 36
+ISR_NOERR 37
+ISR_NOERR 38
+ISR_NOERR 39
+ISR_NOERR 40
+ISR_NOERR 41
+ISR_NOERR 42
+ISR_NOERR 43
+ISR_NOERR 44
 
 isr_common:
     push rax
@@ -97,4 +108,5 @@ isr_stub_table:
     dq isr_8, isr_9, isr_10, isr_11, isr_12, isr_13, isr_14, isr_15
     dq isr_16, isr_17, isr_18, isr_19, isr_20, isr_21, isr_22, isr_23
     dq isr_24, isr_25, isr_26, isr_27, isr_28, isr_29, isr_30, isr_31
-    dq isr_32, isr_33
+    dq isr_32, isr_33, isr_34, isr_35, isr_36, isr_37, isr_38, isr_39
+    dq isr_40, isr_41, isr_42, isr_43, isr_44

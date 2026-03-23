@@ -15,7 +15,7 @@
 - [ ] Scheduler sederhana dan task management.
 - [ ] Timer interrupt + timekeeping.
 - [x] Driver keyboard dan handler input.
-- [ ] Logging sistem (levels: info/warn/error).
+- [x] Logging sistem (levels: info/warn/error).
 
 ## Prioritas 3 (Filesystem + Utilities)
 

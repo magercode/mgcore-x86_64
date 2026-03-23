@@ -21,6 +21,8 @@ if [ "${MODE}" = "gui" ]; then
   exec "${QEMU_BIN}" \
     -m 256M \
     -display sdl \
+    -netdev user,id=n0 \
+    -device rtl8139,netdev=n0 \
     -serial "file:${SERIAL_LOG}" \
     -cdrom "${ISO}" \
     -no-reboot \
@@ -29,6 +31,8 @@ fi
 
 exec qemu-system-x86_64.exe \
   -m 256M \
+  -netdev user,id=n0 \
+  -device rtl8139,netdev=n0 \
   -serial stdio \
   -cdrom "${ISO}" \
   -no-reboot \

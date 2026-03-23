@@ -10,6 +10,7 @@
 
 void kernel_main(uint32_t multiboot_magic, uintptr_t multiboot_info_ptr);
 void kernel_halt(void) __attribute__((noreturn));
+void kernel_reboot(void) __attribute__((noreturn));
 void kernel_panic(const char *message) __attribute__((noreturn));
 
 uintptr_t kernel_image_start(void);

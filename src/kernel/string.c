@@ -200,6 +200,52 @@ int ksnprintf(char *buffer, size_t size, const char *fmt, ...) {
   return written;
 }
 
+int kvformat_braces(char *buffer, size_t size, const char *pattern, va_list args) {
+  size_t index = 0;
+  const char *p = pattern;
+
+  if (size == 0) {
+    return 0;
+  }
+
+  while (p && *p) {
+    if (p[0] == '{' && p[1] == '{') {
+      append_char(buffer, size, &index, '{');
+      p += 2;
+      continue;
+    }
+    if (p[0] == '}' && p[1] == '}') {
+      append_char(buffer, size, &index, '}');
+      p += 2;
+      continue;
+    }
+    if (p[0] == '{' && p[1] == '}') {
+      const char *arg = va_arg(args, const char *);
+      if (arg) {
+        append_string(buffer, size, &index, arg);
+      } else {
+        append_char(buffer, size, &index, '{');
+        append_char(buffer, size, &index, '}');
+      }
+      p += 2;
+      continue;
+    }
+    append_char(buffer, size, &index, *p++);
+  }
+
+  buffer[(index < size) ? index : size - 1] = '\0';
+  return (int)index;
+}
+
+int kformat_braces(char *buffer, size_t size, const char *pattern, ...) {
+  int written;
+  va_list args;
+  va_start(args, pattern);
+  written = kvformat_braces(buffer, size, pattern, args);
+  va_end(args);
+  return written;
+}
+
 void *memcpy(void *dst, const void *src, size_t size) { return kmemcpy(dst, src, size); }
 void *memmove(void *dst, const void *src, size_t size) { return kmemmove(dst, src, size); }
 void *memset(void *dst, int value, size_t size) { return kmemset(dst, value, size); }

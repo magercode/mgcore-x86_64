@@ -72,6 +72,19 @@ void task_exit(int status) {
   current->exit_code = status;
 }
 
+int task_kill(pid_t pid, int status) {
+  task *victim = task_find(pid);
+  if (!victim) {
+    return 0;
+  }
+  if (victim->state == TASK_UNUSED || victim->state == TASK_ZOMBIE) {
+    return 0;
+  }
+  victim->state = TASK_ZOMBIE;
+  victim->exit_code = status;
+  return 1;
+}
+
 void task_sleep_until(uint64_t tick) {
   task *current = task_current();
   current->state = TASK_SLEEPING;
@@ -106,6 +119,43 @@ void task_scheduler_tick(uint64_t now) {
   if (g_tasks[g_current_index].state == TASK_RUNNABLE) {
     g_tasks[g_current_index].state = TASK_RUNNING;
   }
+}
+
+static size_t task_estimated_pages(const task *entry) {
+  uintptr_t brk_bytes = 0;
+  uintptr_t mmap_bytes = 0;
+  const uintptr_t mmap_base_start = 0x20000000ULL;
+  if (entry->mm.brk_current > entry->mm.brk_base) {
+    brk_bytes = entry->mm.brk_current - entry->mm.brk_base;
+  }
+  if (entry->mm.next_mmap_base > mmap_base_start) {
+    mmap_bytes = entry->mm.next_mmap_base - mmap_base_start;
+  }
+  return (size_t)((brk_bytes + mmap_bytes + MGCORE_PAGE_SIZE - 1) / MGCORE_PAGE_SIZE);
+}
+
+pid_t task_find_likely_memory_leaker(void) {
+  size_t i;
+  size_t worst_pages = 0;
+  pid_t worst_pid = 0;
+
+  for (i = 0; i < MGCORE_ARRAY_SIZE(g_tasks); ++i) {
+    const task *entry = &g_tasks[i];
+    size_t pages;
+    if (entry->state == TASK_UNUSED || entry->state == TASK_ZOMBIE) {
+      continue;
+    }
+    if (entry->ppid == 0) {
+      continue;
+    }
+    pages = task_estimated_pages(entry);
+    if (pages > worst_pages) {
+      worst_pages = pages;
+      worst_pid = entry->pid;
+    }
+  }
+
+  return worst_pid;
 }
 
 void task_dump(void) {

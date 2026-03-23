@@ -3,12 +3,17 @@
 #include "mgcore/elf.h"
 #include "mgcore/fs.h"
 #include "mgcore/interrupt.h"
+#include "mgcore/io.h"
 #include "mgcore/kernel.h"
 #include "mgcore/keyboard.h"
 #include "mgcore/multiboot2.h"
+#include "mgcore/mouse.h"
+#include "mgcore/net.h"
 #include "mgcore/pmm.h"
+#include "mgcore/safeboot.h"
 #include "mgcore/sched.h"
 #include "mgcore/signal.h"
+#include "mgcore/swap.h"
 #include "mgcore/syscall.h"
 #include "mgcore/task.h"
 #include "mgcore/vmm.h"
@@ -40,9 +45,24 @@ void kernel_halt(void) {
   }
 }
 
+void kernel_reboot(void) {
+  int i;
+  __asm__ volatile ("cli");
+  for (i = 0; i < 100000; ++i) {
+    if ((io_in8(0x64) & 0x02u) == 0) {
+      break;
+    }
+  }
+  io_out8(0x64, 0xFE);
+  for (;;) {
+    __asm__ volatile ("hlt");
+  }
+}
+
 void kernel_panic(const char *message) {
+  pid_t suspect = task_find_likely_memory_leaker();
   console_printf("\nPANIC: %s\n", message);
-  kernel_halt();
+  safeboot_trigger("kernel panic", suspect);
 }
 
 void kernel_main(uint32_t multiboot_magic, uintptr_t multiboot_info_ptr) {
@@ -58,15 +78,18 @@ void kernel_main(uint32_t multiboot_magic, uintptr_t multiboot_info_ptr) {
 
   console_printf("kernel image: %p - %p\n", (void *)kernel_image_start(), (void *)kernel_image_end());
   pmm_init(info, kernel_image_start(), kernel_image_end());
+  swap_init(pmm_total_pages());
   vmm_init();
   task_init();
   scheduler_init();
   interrupt_init();
   keyboard_init();
+  mouse_init();
   syscall_init();
   signal_init();
   fs_init();
   elf_init();
+  net_init();
 
   module = find_initramfs_module(info);
   if (module) {
@@ -84,8 +107,9 @@ void kernel_main(uint32_t multiboot_magic, uintptr_t multiboot_info_ptr) {
   task_spawn_user("init");
 
   console_writeln("interrupts: enabling timer + serial monitor");
-  cli_init();
   interrupt_enable();
+  net_startup_connect();
+  cli_init();
   cli_run();
   kernel_halt();
 }

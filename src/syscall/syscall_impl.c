@@ -2,6 +2,7 @@
 #include "mgcore/elf.h"
 #include "mgcore/errno.h"
 #include "mgcore/fs.h"
+#include "mgcore/kernel.h"
 #include "mgcore/kstring.h"
 #include "mgcore/sched.h"
 #include "mgcore/signal.h"
@@ -237,8 +238,8 @@ long sys_gettimeofday(uint64_t tv_ptr, uint64_t tz_ptr, uint64_t a2, uint64_t a3
 
 long sys_reboot(uint64_t magic1, uint64_t magic2, uint64_t cmd, uint64_t arg, uint64_t a4, uint64_t a5) {
   (void)magic1; (void)magic2; (void)cmd; (void)arg; (void)a4; (void)a5;
-  console_writeln("reboot: requested (stub)");
-  return 0;
+  console_writeln("reboot: requested");
+  kernel_reboot();
 }
 
 UNIMPLEMENTED(sys_lstat)

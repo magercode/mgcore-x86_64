@@ -97,5 +97,20 @@ void pmm_free_page(uintptr_t physical) {
 }
 
 void pmm_dump(void) {
-  console_printf("pmm: free pages=%u\n", (unsigned)g_free_pages);
+  console_printf("pmm: total=%u used=%u free=%u pages\n",
+                 (unsigned)pmm_total_pages(),
+                 (unsigned)pmm_used_pages(),
+                 (unsigned)pmm_free_pages());
+}
+
+size_t pmm_total_pages(void) {
+  return g_total_pages;
+}
+
+size_t pmm_free_pages(void) {
+  return g_free_pages;
+}
+
+size_t pmm_used_pages(void) {
+  return g_total_pages - g_free_pages;
 }
