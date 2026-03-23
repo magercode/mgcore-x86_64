@@ -7,6 +7,8 @@
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
 #define VGA_MEMORY ((volatile uint16_t *)0xB8000)
+#define VGA_CRTC_INDEX_PORT 0x3D4
+#define VGA_CRTC_DATA_PORT 0x3D5
 #define SERIAL_PORT 0x3F8
 #define CONSOLE_INPUT_CAPACITY 128
 
@@ -52,6 +54,14 @@ static int serial_has_input(void) {
   return (io_in8(SERIAL_PORT + 5) & 0x01) != 0;
 }
 
+static void vga_update_hw_cursor(void) {
+  uint16_t position = (uint16_t)(g_row * VGA_WIDTH + g_col);
+  io_out8(VGA_CRTC_INDEX_PORT, 0x0F);
+  io_out8(VGA_CRTC_DATA_PORT, (uint8_t)(position & 0xFF));
+  io_out8(VGA_CRTC_INDEX_PORT, 0x0E);
+  io_out8(VGA_CRTC_DATA_PORT, (uint8_t)((position >> 8) & 0xFF));
+}
+
 static void serial_putc(char c) {
   while (!serial_is_transmit_empty()) {
   }
@@ -70,15 +80,52 @@ static void vga_scroll(void) {
     VGA_MEMORY[(VGA_HEIGHT - 1) * VGA_WIDTH + col] = ((uint16_t)g_color << 8) | ' ';
   }
   g_row = VGA_HEIGHT - 1;
+  vga_update_hw_cursor();
 }
 
 static void vga_putc(char c) {
+  if (c == '\r') {
+    g_col = 0;
+    vga_update_hw_cursor();
+    return;
+  }
+
   if (c == '\n') {
     g_col = 0;
     ++g_row;
     if (g_row >= VGA_HEIGHT) {
       vga_scroll();
+      return;
     }
+    vga_update_hw_cursor();
+    return;
+  }
+
+  if (c == '\b') {
+    if (g_col > 0) {
+      --g_col;
+    } else if (g_row > 0) {
+      --g_row;
+      g_col = VGA_WIDTH - 1;
+    } else {
+      return;
+    }
+
+    VGA_MEMORY[g_row * VGA_WIDTH + g_col] = ((uint16_t)g_color << 8) | ' ';
+    vga_update_hw_cursor();
+    return;
+  }
+
+  if (c == '\t') {
+    size_t spaces = 4U - (g_col % 4U);
+    size_t i;
+    for (i = 0; i < spaces; ++i) {
+      vga_putc(' ');
+    }
+    return;
+  }
+
+  if ((uint8_t)c < 0x20U) {
     return;
   }
 
@@ -89,8 +136,10 @@ static void vga_putc(char c) {
     ++g_row;
     if (g_row >= VGA_HEIGHT) {
       vga_scroll();
+      return;
     }
   }
+  vga_update_hw_cursor();
 }
 
 void console_init(void) {
@@ -107,6 +156,7 @@ void console_clear(void) {
   for (i = 0; i < VGA_WIDTH * VGA_HEIGHT; ++i) {
     VGA_MEMORY[i] = ((uint16_t)g_color << 8) | ' ';
   }
+  vga_update_hw_cursor();
 }
 
 void console_putc(char c) {

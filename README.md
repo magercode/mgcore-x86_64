@@ -16,6 +16,11 @@ MGCORE sekarang dibentuk sebagai fondasi kernel `x86_64` freestanding dengan boo
 - `scripts/` : pembuat initramfs dan helper run
 - `docs/syscalls.md` : daftar syscall yang sudah di-scaffold
 
+## Navigasi dokumentasi
+
+- `docs/syscall.md` : penjelasan lengkap syscall (apa, kenapa, cara kerja, analogi)
+- `docs/syscalls.md` : daftar status syscall MGCORE (implemented/scaffold/placeholder)
+
 ## Toolchain
 
 Baseline yang diasumsikan:
